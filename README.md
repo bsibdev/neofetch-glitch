@@ -1,0 +1,1 @@
+Script to make a glitchy animation out of neofetch.

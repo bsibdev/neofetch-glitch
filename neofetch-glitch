@@ -1,0 +1,100 @@
+#!/bin/bash     
+
+glitch_count=2
+glitch_timing=0.005
+primary_color=44
+secondary_color=$((primary_color - 6))
+cleanup="clean"
+mode="default"
+distro_ascii=""
+
+show_help() {
+	echo "Usage: $0 [-d distro] [-m mode] [-c count] [-t timing] [-p primary_color] [-s secondary_color]"
+	echo "Options:"
+	echo "  -d  Distro ASCII art"
+	echo "  -m  Mode: default, data, logo"
+	echo "  -c  Glitch count"
+	echo "  -t  Glitch timing"
+	echo "  -p  Primary color (0-255)"
+	echo "  -s  Secondary color (0-255)"
+	echo "  --link  Add script to PATH (requires sudo)"
+}
+
+add_to_path() {
+
+	local script_name=$(basename "$0")
+	local script_path=$(realpath "$0")
+	local local_path="/usr/local/bin"
+
+	if [ ! -d "$local_path" ] || [ ! -w "$local_path" ]; then
+        echo "Error: $local_path is not writable. Try running with sudo."
+        exit 1
+    fi
+	
+	if ! command -v $script_name 2>/dev/null; then
+		ln -s -f "$script_path" "$local_path/$script_name"
+		if command -v $script_name 2>/dev/null; then
+			echo "$script_name added to PATH"
+			exit 0
+		fi
+	else 
+		echo "$script_name is already in PATH"
+		exit 0
+	fi
+}
+
+while getopts 'd:m:c:t:p:s:-:' flag; do
+	case "${flag}" in
+		d) distro_ascii="--ascii_distro ${OPTARG}" ;;
+		m) mode="${OPTARG}" ;;
+		c) glitch_count="${OPTARG}" ;;
+		t) glitch_timing="${OPTARG}" ;;
+		p) primary_color="${OPTARG}"; secondary_color=$((primary_color - 6))  ;;
+		s) secondary_color="${OPTARG}" ;;
+		-) 
+			case "${OPTARG}" in
+			help) show_help; exit 0 ;;
+			link) add_to_path; exit 0;;
+			*) echo "Invalid option: -${OPTARG}" >&2; exit 1 ;;
+			esac ;;
+	esac
+done
+
+draw_default() {
+	for ((i=1; i<=glitch_count; i++)); do
+		neofetch --color_blocks off $distro_ascii
+		sleep $glitch_timing
+		clear
+	done
+
+	neofetch --color_blocks off --colors $primary_color $primary_color $primary_color $primary_color $primary_color $primary_color $distro_ascii --ascii_colors $primary_color $secondary_color $primary_color $primary_color $primary_color $primary_color
+}
+
+draw_data() {
+	for ((i=1; i<=glitch_count; i++)); do
+		neofetch --color_blocks off --backend off
+		sleep $glitch_timing
+		clear
+	done
+
+	neofetch --color_blocks off --backend off --colors $primary_color $primary_color $primary_color $primary_color $primary_color $primary_color 
+}
+
+draw_logo() {   
+	for ((i=1; i<=glitch_count; i++)); do
+		neofetch -L $distro_ascii
+		sleep $glitch_timing
+		clear
+	done
+
+	neofetch -L $distro_ascii --ascii_colors $primary_color $secondary_color $primary_color $primary_color $primary_color $primary_color
+}
+
+
+clear
+
+case "$mode" in
+	default) draw_default ;;
+	data) draw_data ;;
+	logo) draw_logo ;;
+esac
